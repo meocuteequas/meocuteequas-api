@@ -1,19 +1,15 @@
+import { UsersService } from '../users/users.service';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { Supabase } from 'src/supabase/supabase.service';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly supabase: Supabase) {}
+  constructor(private readonly service: UsersService) {}
 
-  async signIn(username: string, password: string): Promise<any> {
-    const client = await this.supabase.getClient();
+  async login(username: string, password: string) {
+    const user = await this.service.findOne(username);
 
-    const { data, error } = await client.auth.signInWithPassword({
-      email: username,
-      password: password,
-    });
+    if (user) return user;
 
-    if (error) throw new UnauthorizedException(error);
-    return data;
+    throw new UnauthorizedException('Username or password is incorrect');
   }
 }

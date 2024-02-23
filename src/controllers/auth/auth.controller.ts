@@ -10,13 +10,13 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { SignInDto } from './dtos/sign-in.dto';
-import { UsersService } from '../users/users.service';
 import { Public } from 'src/decorators/public.decorator';
+import { AuthService } from './auth.service';
 
 @Controller('auth')
 export class AuthController {
   constructor(
-    private usersService: UsersService,
+    private authService: AuthService,
     private jwtService: JwtService,
   ) {}
 
@@ -24,13 +24,14 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async login(@Body() { name, password }: SignInDto) {
-    const user = await this.usersService.findOne(name);
-    if (user === undefined || user.password !== password)
-      throw new UnauthorizedException();
+    const user = await this.authService.login(name, password);
 
-    const payload = { sub: user.id, name: user.name, roles: user.roles };
+    if (user === null)
+      throw new UnauthorizedException('Không biết nói sao nữa');
+
+    const accessToken = await this.jwtService.signAsync(user);
     return {
-      access_token: await this.jwtService.signAsync(payload),
+      access_token: accessToken,
     };
   }
 
